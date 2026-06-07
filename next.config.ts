@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
   },
   // Hanya gunakan custom Webpack config di komputer lokal, abaikan di Vercel agar Turbopack berjalan lancar
   ...(isVercel ? {} : {
+    turbopack: {},
     webpack: (config) => {
       config.resolve.modules = [
         path.resolve(process.cwd(), "node_modules"),

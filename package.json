@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node -e \"if (process.env.VERCEL === '1' && require('fs').existsSync('babel.config.js')) require('fs').unlinkSync('babel.config.js');\" && next build",
+    "build": "node -e \"const cp = require('child_process'); if (process.env.VERCEL === '1') { if (require('fs').existsSync('babel.config.js')) require('fs').unlinkSync('babel.config.js'); cp.spawnSync('npx', ['next', 'build'], { stdio: 'inherit', shell: true }); } else { cp.spawnSync('npx', ['next', 'build', '--webpack'], { stdio: 'inherit', shell: true }); }\"",
     "start": "next start",
     "lint": "eslint"
   },
