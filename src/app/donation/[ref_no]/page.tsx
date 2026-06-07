@@ -100,27 +100,6 @@ export default function DonationPage({ params }: PageProps) {
     return () => clearTimeout(timer);
   }, [timeLeft, data?.status]);
 
-  // Simulasi tombol Bayar Sukses Instan (Untuk mempermudah testing Mock Mode)
-  const triggerMockSuccess = async () => {
-    try {
-      // Panggil status callback tiruan
-      await fetch("/api/donations/callback", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ref_no: ref_no,
-          status: "success",
-          issuer: "MOCK_GOPAY",
-        }),
-      });
-      // Panggil fetchDetails untuk update halaman
-      fetchDetails();
-    } catch (err) {
-      console.error("Error triggering mock success:", err);
-    }
-  };
 
   const triggerConfetti = async () => {
     const confettiModule = await import("canvas-confetti");
@@ -318,20 +297,7 @@ export default function DonationPage({ params }: PageProps) {
               </span>
             </div>
 
-            {/* Mock Mode: Fast success shortcut button */}
-            {ref_no.startsWith("MOCK_") && (
-              <div className="mt-6 border-t-4 border-brand-black dark:border-brand-white pt-6">
-                <button
-                  onClick={triggerMockSuccess}
-                  className="w-full py-2.5 bg-brand-green text-brand-white border-comic font-heading text-xs uppercase tracking-wider shadow-brutal-sm hover-brutal active-brutal cursor-pointer flex items-center justify-center gap-2"
-                >
-                  💡 KLIK UNTUK SIMULASI SUKSES (Cepat)
-                </button>
-                <p className="font-comic font-bold text-[10px] text-zinc-400 dark:text-zinc-500 mt-2">
-                  * Tombol ini hanya muncul di mode simulasi (Mock Mode) untuk mempermudah review.
-                </p>
-              </div>
-            )}
+
           </div>
         )}
 
