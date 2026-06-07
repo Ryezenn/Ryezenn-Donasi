@@ -1,26 +1,151 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  --font-sans: var(--font-plus-jakarta), sans-serif;
+  --font-comic: var(--font-comic-neue), cursive, sans-serif;
+  --font-heading: var(--font-lilita), cursive, sans-serif;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-brand-yellow: #FACC15;
+  --color-brand-blue: #3B82F6;
+  --color-brand-red: #EF4444;
+  --color-brand-green: #10B981;
+  --color-brand-black: #000000;
+  --color-brand-white: #FFFFFF;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  --animate-bounce-slow: bounce 2s infinite;
+  --animate-spin-slow: spin 8s linear infinite;
+  --animate-wiggle: wiggle 0.3s ease-in-out infinite;
+
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(-3deg); }
+    50% { transform: rotate(3deg); }
   }
 }
 
+/* Base custom styles */
+:root {
+  --bg-color: #F8F6F0; /* Warm off-white default */
+  --text-color: #000000;
+  --border-color: #000000;
+  --shadow-color: #000000;
+  --font-plus-jakarta: "Plus Jakarta Sans", sans-serif;
+  --font-comic-neue: "Comic Neue", cursive, sans-serif;
+  --font-lilita: "Lilita One", cursive, sans-serif;
+}
+
+
+.dark {
+  --bg-color: #121214; /* Dark gray */
+  --text-color: #FFFFFF;
+  --border-color: #FFFFFF;
+  --shadow-color: #000000;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  overflow-x: hidden;
+}
+
+/* Neo-Brutalist Borders & Shadows */
+.border-comic {
+  border: 4px solid var(--border-color);
+}
+
+.border-comic-thick {
+  border: 6px solid var(--border-color);
+}
+
+.border-comic-thin {
+  border: 2px solid var(--border-color);
+}
+
+.shadow-brutal-yellow {
+  box-shadow: 4px 4px 0px 0px #FACC15;
+}
+
+.shadow-brutal-blue {
+  box-shadow: 4px 4px 0px 0px #3B82F6;
+}
+
+.shadow-brutal-red {
+  box-shadow: 4px 4px 0px 0px #EF4444;
+}
+
+.shadow-brutal-green {
+  box-shadow: 4px 4px 0px 0px #10B981;
+}
+
+.shadow-brutal-black {
+  box-shadow: 4px 4px 0px 0px var(--border-color);
+}
+
+.shadow-brutal-lg {
+  box-shadow: 8px 8px 0px 0px var(--border-color);
+}
+
+.shadow-brutal-sm {
+  box-shadow: 2px 2px 0px 0px var(--border-color);
+}
+
+/* Hover effects */
+.hover-brutal:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px 0px var(--border-color);
+}
+
+.active-brutal:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px 0px var(--border-color);
+}
+
+/* Comic Speech Bubble Arrows */
+.speech-bubble {
+  position: relative;
+}
+
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -16px;
+  left: 24px;
+  border-width: 16px 16px 0 0;
+  border-style: solid;
+  border-color: var(--border-color) transparent transparent transparent;
+  display: block;
+  width: 0;
+}
+
+.speech-bubble-inner::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 26px;
+  border-width: 12px 12px 0 0;
+  border-style: solid;
+  border-color: inherit;
+  display: block;
+  width: 0;
+  z-index: 10;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-color);
+  border-left: 4px solid var(--border-color);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #FACC15;
+  border: 3px solid var(--bg-color);
+  border-radius: 0px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #EF4444;
 }
