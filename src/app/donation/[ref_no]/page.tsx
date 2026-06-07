@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState, useRef } from "react";
 import Link from "next/link";
-const confetti = require("canvas-confetti");
+
 
 
 
@@ -121,7 +121,10 @@ export default function DonationPage({ params }: PageProps) {
     }
   };
 
-  const triggerConfetti = () => {
+  const triggerConfetti = async () => {
+    const confettiModule = await import("canvas-confetti");
+    const confetti = (confettiModule.default || confettiModule) as any;
+
     // Ledakan Confetti Bouncy khas Komik
     const duration = 4 * 1000;
     const animationEnd = Date.now() + duration;
