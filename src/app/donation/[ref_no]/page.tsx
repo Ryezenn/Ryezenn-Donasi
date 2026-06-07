@@ -2,8 +2,8 @@
 
 import { use, useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import * as confettiModule from "canvas-confetti";
-const confetti = (confettiModule.default || confettiModule) as any;
+const confetti = require("canvas-confetti");
+
 
 
 interface PageProps {
