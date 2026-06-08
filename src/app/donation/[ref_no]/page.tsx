@@ -67,6 +67,41 @@ export default function DonationPage({ params }: PageProps) {
         }
       }
       
+      // Jika status pending, lakukan pengecekan langsung dari browser (karena IP browser residential bebas blokir WAF)
+      if (result.status === "pending" && !ref_no.startsWith("MOCK_")) {
+        try {
+          const checkRes = await fetch(`https://mustikapayment.com/api/v1/check/qris?ref_no=${ref_no}`, {
+            method: "GET",
+            headers: {
+              "X-Api-Key": "MP-Ryezenn-1780782894",
+              "Accept": "application/json",
+            },
+          });
+
+          if (checkRes.ok) {
+            const checkData = await checkRes.json();
+            const paymentStatus = checkData.data?.status || checkData.status;
+            const issuer = checkData.data?.issuer || checkData.issuer || "QRIS";
+
+            if (paymentStatus === "success" || paymentStatus === "SUCCESS") {
+              console.log("🎉 Pembayaran terdeteksi sukses langsung dari browser! Mengupdate database...");
+              const updateRes = await fetch(`/api/donations/status?ref_no=${ref_no}&set_success=true&issuer=${encodeURIComponent(issuer)}`);
+              const updateResult = await updateRes.json();
+              
+              if (updateResult.status === "success") {
+                setData(updateResult);
+                if (!hasCelebrated.current) {
+                  hasCelebrated.current = true;
+                  triggerConfetti();
+                }
+              }
+            }
+          }
+        } catch (clientCheckErr) {
+          console.warn("Client-side direct status check failed:", clientCheckErr);
+        }
+      }
+
       // Deteksi jika pembayaran berhasil
       if (result.status === "success" && !hasCelebrated.current) {
         hasCelebrated.current = true;

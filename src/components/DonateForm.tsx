@@ -43,6 +43,7 @@ export default function DonateForm() {
     setError(null);
 
     try {
+      // 1. Coba hit API server-side terlebih dahulu
       const response = await fetch("/api/donations/create", {
         method: "POST",
         headers: {
@@ -58,8 +59,90 @@ export default function DonateForm() {
       const result = await response.json();
 
       if (result.status === "success" && result.ref_no) {
-        // Redirect ke halaman QRIS
+        // Berhasil langsung dari server
         router.push(`/donation/${result.ref_no}`);
+      } else if (result.status === "waf_blocked") {
+        console.warn("⚠️ Server Vercel diblokir oleh Cloudflare WAF Gateway. Mencoba melakukan request langsung dari Browser (Client)...");
+        
+        // 2. Client-side Bypass: Hit API MustikaPayment secara langsung dari browser donor (residential IP)
+        try {
+          const payload = new URLSearchParams();
+          payload.append("amount", finalAmount.toString());
+          payload.append("product_name", `Donasi Ryezenn Project - ${name || "Anonim"}`);
+          payload.append("customer_name", name || "Anonim");
+          payload.append("expiry", "30");
+          payload.append("redirect_url", `${window.location.origin}/donation/temp`);
+
+          const directRes = await fetch("https://mustikapayment.com/api/v1/create/qris", {
+            method: "POST",
+            headers: {
+              "X-Api-Key": result.apiKey,
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: payload.toString(),
+          });
+
+          if (!directRes.ok) {
+            throw new Error(`Client call failed with status ${directRes.status}`);
+          }
+
+          const directResult = await directRes.json();
+
+          if (directResult.status !== "success" || !directResult.ref_no) {
+            throw new Error(directResult.message || "Gagal membuat transaksi dari browser");
+          }
+
+          // 3. Simpan transaksi yang berhasil dibuat ke database via /api/donations/create (save_only)
+          const saveRes = await fetch("/api/donations/create", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              amount: finalAmount,
+              customer_name: name || "Anonim",
+              message: message,
+              save_only: true,
+              ref_no: directResult.ref_no,
+              qr_url: directResult.qr_url,
+              payment_link: directResult.payment_link,
+              is_mock: false,
+            }),
+          });
+
+          const saveResult = await saveRes.json();
+
+          if (saveResult.status === "success") {
+            router.push(`/donation/${directResult.ref_no}`);
+          } else {
+            throw new Error("Gagal menyimpan transaksi ke database");
+          }
+
+        } catch (clientErr: any) {
+          console.warn("⚠️ Gagal membuat transaksi langsung dari browser, beralih ke Mock Mode:", clientErr.message);
+          
+          // 4. Fallback ke Mock Mode (jika client-side juga gagal)
+          const mockRes = await fetch("/api/donations/create", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              amount: finalAmount,
+              customer_name: name || "Anonim",
+              message: message,
+              force_mock: true,
+            }),
+          });
+
+          const mockResult = await mockRes.json();
+
+          if (mockResult.status === "success" && mockResult.ref_no) {
+            router.push(`/donation/${mockResult.ref_no}`);
+          } else {
+            setError("Gagal memproses pembayaran. Silakan coba beberapa saat lagi.");
+          }
+        }
       } else {
         setError(result.message || "Gagal membuat barcode QRIS. Silakan coba kembali.");
       }

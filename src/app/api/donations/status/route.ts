@@ -33,6 +33,27 @@ export async function GET(req: Request) {
       );
     }
 
+    const setSuccess = searchParams.get("set_success") === "true";
+    const updateIssuer = searchParams.get("issuer") || "QRIS";
+
+    if (setSuccess && donation.status === "pending") {
+      donation.status = "success";
+      donation.paidAt = new Date();
+      donation.issuer = updateIssuer;
+
+      if (dbIsMock && mockDb) {
+        const idx = mockDb.donations.findIndex((d: any) => d.ref_no === ref_no);
+        if (idx !== -1) {
+          mockDb.donations[idx] = { ...donation };
+        }
+      } else if (db) {
+        await db.collection("donations").updateOne(
+          { ref_no },
+          { $set: { status: "success", paidAt: donation.paidAt, issuer: donation.issuer } }
+        );
+      }
+    }
+
     // Jika status masih pending, lakukan pengecekan
     if (donation.status === "pending") {
       const isMockRef = ref_no.startsWith("MOCK_");
