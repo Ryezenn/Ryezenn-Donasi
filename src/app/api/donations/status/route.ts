@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { getDatabase } from "@/lib/mongodb";
 
+// Jalankan serverless function di regional Singapore agar tidak diblokir oleh firewall gateway Indonesia
+export const preferredRegion = "sin1";
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -60,6 +63,18 @@ export async function GET(req: Request) {
               "X-Api-Key": apiKey,
             },
           });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error("MustikaPayment QRIS Check HTTP Error:", response.status, errorText);
+            return NextResponse.json(
+              { 
+                status: "error", 
+                message: `Gateway check returned status ${response.status}.` 
+              },
+              { status: response.status }
+            );
+          }
 
           const apiRes = await response.json();
           console.log("MustikaPayment Check QRIS Response:", apiRes);

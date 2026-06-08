@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { getDatabase } from "@/lib/mongodb";
 
+// Jalankan serverless function di regional Singapore agar tidak diblokir oleh firewall gateway Indonesia
+export const preferredRegion = "sin1";
+
 export async function POST(req: Request) {
   try {
     const { amount, customer_name, message } = await req.json();
@@ -75,6 +78,18 @@ export async function POST(req: Request) {
         },
         body: payload.toString(),
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("MustikaPayment QRIS Create HTTP Error:", response.status, errorText);
+        return NextResponse.json(
+          { 
+            status: "error", 
+            message: `Gateway returned status ${response.status}. Hubungi admin atau periksa kredensial API Key Anda.` 
+          },
+          { status: response.status }
+        );
+      }
 
       const data = await response.json();
 
