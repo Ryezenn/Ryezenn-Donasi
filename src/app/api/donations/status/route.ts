@@ -38,9 +38,9 @@ export async function GET(req: Request) {
       const isMockRef = ref_no.startsWith("MOCK_");
       
       if (isMockRef) {
-        // MOCK MODE: Otomatis sukses setelah 12 detik sejak dibuat
+        // MOCK MODE: Otomatis sukses setelah 30 detik sejak dibuat (diberi waktu untuk melihat QR)
         const timeElapsed = Date.now() - new Date(donation.createdAt).getTime();
-        if (timeElapsed > 12000) { // 12 detik
+        if (timeElapsed > 30000) { // 30 detik
           donation.status = "success";
           donation.paidAt = new Date();
           donation.issuer = ["GOPAY", "OVO", "DANA", "SHOPEEPAY", "LINKAJA"][Math.floor(Math.random() * 5)];
@@ -57,67 +57,64 @@ export async function GET(req: Request) {
         // REAL MODE: Panggil status API MustikaPayment
         const apiKey = "MP-Ryezenn-1780782894";
         if (apiKey) {
-          const response = await fetch(`https://mustikapayment.com/api/v1/check/qris?ref_no=${ref_no}`, {
-            method: "GET",
-            headers: {
-              "X-Api-Key": apiKey,
-              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-              "Accept": "application/json, text/plain, */*",
-            },
-          });
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error("MustikaPayment QRIS Check HTTP Error:", response.status, errorText);
-            return NextResponse.json(
-              { 
-                status: "error", 
-                message: `Gateway check returned status ${response.status}.` 
+          try {
+            const response = await fetch(`https://mustikapayment.com/api/v1/check/qris?ref_no=${ref_no}`, {
+              method: "GET",
+              headers: {
+                "X-Api-Key": apiKey,
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "application/json, text/plain, */*",
               },
-              { status: response.status }
-            );
-          }
+            });
 
-          const apiRes = await response.json();
-          console.log("MustikaPayment Check QRIS Response:", apiRes);
-
-          // Pengecekan status pembayaran yang aman:
-          // Biasanya API membungkus detail transaksi di dalam objek 'data'.
-          // Jadi kita cek apiRes.data.status terlebih dahulu, baru fallback ke apiRes.status.
-          const paymentStatus = apiRes.data?.status || apiRes.status;
-          const issuer = apiRes.data?.issuer || apiRes.issuer || "QRIS";
-          const settleAt = apiRes.data?.settle_at || apiRes.settle_at;
-
-          if (paymentStatus === "success" || paymentStatus === "SUCCESS") {
-            donation.status = "success";
-            donation.paidAt = settleAt ? new Date(settleAt) : new Date();
-            donation.issuer = issuer;
-
-            // Update database
-            if (dbIsMock && mockDb) {
-              const idx = mockDb.donations.findIndex((d: any) => d.ref_no === ref_no);
-              if (idx !== -1) {
-                mockDb.donations[idx] = { ...donation };
-              }
-            } else if (db) {
-              await db.collection("donations").updateOne(
-                { ref_no },
-                { $set: { status: "success", paidAt: donation.paidAt, issuer: donation.issuer } }
-              );
+            if (!response.ok) {
+              throw new Error(`Gateway returned HTTP ${response.status}`);
             }
-          } else if (paymentStatus === "failed" || paymentStatus === "FAILED") {
-            donation.status = "failed";
-            if (dbIsMock && mockDb) {
-              const idx = mockDb.donations.findIndex((d: any) => d.ref_no === ref_no);
-              if (idx !== -1) {
-                mockDb.donations[idx].status = "failed";
+
+            const apiRes = await response.json();
+            console.log("MustikaPayment Check QRIS Response:", apiRes);
+
+            // Pengecekan status pembayaran yang aman:
+            // Biasanya API membungkus detail transaksi di dalam objek 'data'.
+            // Jadi kita cek apiRes.data.status terlebih dahulu, baru fallback ke apiRes.status.
+            const paymentStatus = apiRes.data?.status || apiRes.status;
+            const issuer = apiRes.data?.issuer || apiRes.issuer || "QRIS";
+            const settleAt = apiRes.data?.settle_at || apiRes.settle_at;
+
+            if (paymentStatus === "success" || paymentStatus === "SUCCESS") {
+              donation.status = "success";
+              donation.paidAt = settleAt ? new Date(settleAt) : new Date();
+              donation.issuer = issuer;
+
+              // Update database
+              if (dbIsMock && mockDb) {
+                const idx = mockDb.donations.findIndex((d: any) => d.ref_no === ref_no);
+                if (idx !== -1) {
+                  mockDb.donations[idx] = { ...donation };
+                }
+              } else if (db) {
+                await db.collection("donations").updateOne(
+                  { ref_no },
+                  { $set: { status: "success", paidAt: donation.paidAt, issuer: donation.issuer } }
+                );
               }
-            } else if (db) {
-              await db.collection("donations").updateOne(
-                { ref_no },
-                { $set: { status: "failed" } }
-              );
+            } else if (paymentStatus === "failed" || paymentStatus === "FAILED") {
+              donation.status = "failed";
+              if (dbIsMock && mockDb) {
+                const idx = mockDb.donations.findIndex((d: any) => d.ref_no === ref_no);
+                if (idx !== -1) {
+                  mockDb.donations[idx].status = "failed";
+                }
+              } else if (db) {
+                await db.collection("donations").updateOne(
+                  { ref_no },
+                  { $set: { status: "failed" } }
+                );
+              }
             }
+          } catch (err: any) {
+            console.warn(`⚠️ MustikaPayment Status check failed (possibly Cloudflare WAF block): ${err.message}`);
+            // Return status pending (biar website tidak crash dan tetap menunggu pembayaran asli)
           }
         }
       }
