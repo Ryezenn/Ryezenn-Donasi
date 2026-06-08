@@ -38,6 +38,7 @@ export async function POST(req: Request) {
         type: "QRIS",
         issuer: "MOCK_GATEWAY",
         createdAt: new Date(),
+        qr_url: mockQrUrl,
       };
 
       if (dbIsMock && mockDb) {
@@ -92,6 +93,7 @@ export async function POST(req: Request) {
         status: "pending",
         type: "QRIS",
         createdAt: new Date(),
+        qr_url: data.qr_url || null,
       };
 
       if (dbIsMock && mockDb) {

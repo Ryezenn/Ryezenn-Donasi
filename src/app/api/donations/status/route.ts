@@ -114,6 +114,7 @@ export async function GET(req: Request) {
       message: donation.message,
       issuer: donation.issuer || null,
       paidAt: donation.paidAt || null,
+      qr_url: donation.qr_url || null,
     });
   } catch (error: any) {
     console.error("Error checking status:", error);

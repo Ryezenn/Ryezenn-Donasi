@@ -19,6 +19,7 @@ interface DonationStatus {
   message: string;
   issuer: string | null;
   paidAt: string | null;
+  qr_url?: string | null;
 }
 
 export default function DonationPage({ params }: PageProps) {
@@ -47,14 +48,23 @@ export default function DonationPage({ params }: PageProps) {
       setData(result);
       
       if (!qrUrl && result.status === "pending") {
-        // Gunakan API QR Code Generator dari string QRIS MustikaPayment atau mock string.
-        // Jika dari MustikaPayment, data QRIS ada di qr_url/payment_link.
-        // Di sini kita bisa generate QR code dari parameter ref_no / data transaksi.
-        // QRIS dinamis merupakan format string panjang. Jika di mock mode, kita buat mock string QRIS.
-        const mockQRISPayload = `00020101021226590014ID.CO.QRIS.WWW0215ID10202183391940303UMI511900129000000000000005204581253033605405100005802ID5915Ryezenn Project6009Tangerang61051511162070703A016304ECE3`;
-        setQrUrl(
-          `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(mockQRISPayload)}`
-        );
+        if (result.qr_url) {
+          // Jika qr_url dari gateway sudah berupa link gambar, gunakan langsung.
+          // Jika isinya payload string QRIS (000201010212...), kita buat QR code image.
+          if (result.qr_url.startsWith("http")) {
+            setQrUrl(result.qr_url);
+          } else {
+            setQrUrl(
+              `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(result.qr_url)}`
+            );
+          }
+        } else {
+          // Fallback ke mock QRIS payload
+          const mockQRISPayload = `00020101021226590014ID.CO.QRIS.WWW0215ID10202183391940303UMI511900129000000000000005204581253033605405100005802ID5915Ryezenn Project6009Tangerang61051511162070703A016304ECE3`;
+          setQrUrl(
+            `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(mockQRISPayload)}`
+          );
+        }
       }
       
       // Deteksi jika pembayaran berhasil
