@@ -61,12 +61,20 @@ export async function GET(req: Request) {
             },
           });
 
-          const data = await response.json();
+          const apiRes = await response.json();
+          console.log("MustikaPayment Check QRIS Response:", apiRes);
 
-          if (data.status === "success") {
+          // Pengecekan status pembayaran yang aman:
+          // Biasanya API membungkus detail transaksi di dalam objek 'data'.
+          // Jadi kita cek apiRes.data.status terlebih dahulu, baru fallback ke apiRes.status.
+          const paymentStatus = apiRes.data?.status || apiRes.status;
+          const issuer = apiRes.data?.issuer || apiRes.issuer || "QRIS";
+          const settleAt = apiRes.data?.settle_at || apiRes.settle_at;
+
+          if (paymentStatus === "success" || paymentStatus === "SUCCESS") {
             donation.status = "success";
-            donation.paidAt = data.settle_at ? new Date(data.settle_at) : new Date();
-            donation.issuer = data.issuer || "QRIS";
+            donation.paidAt = settleAt ? new Date(settleAt) : new Date();
+            donation.issuer = issuer;
 
             // Update database
             if (dbIsMock && mockDb) {
@@ -80,9 +88,14 @@ export async function GET(req: Request) {
                 { $set: { status: "success", paidAt: donation.paidAt, issuer: donation.issuer } }
               );
             }
-          } else if (data.status === "failed") {
+          } else if (paymentStatus === "failed" || paymentStatus === "FAILED") {
             donation.status = "failed";
-            if (db) {
+            if (dbIsMock && mockDb) {
+              const idx = mockDb.donations.findIndex((d: any) => d.ref_no === ref_no);
+              if (idx !== -1) {
+                mockDb.donations[idx].status = "failed";
+              }
+            } else if (db) {
               await db.collection("donations").updateOne(
                 { ref_no },
                 { $set: { status: "failed" } }
