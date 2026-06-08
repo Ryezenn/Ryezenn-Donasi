@@ -77,6 +77,8 @@ export async function POST(req: Request) {
         headers: {
           "X-Api-Key": apiKey,
           "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept": "application/json, text/plain, */*",
         },
         body: payload.toString(),
       });
