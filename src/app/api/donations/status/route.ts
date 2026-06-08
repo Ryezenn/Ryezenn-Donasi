@@ -55,7 +55,7 @@ export async function GET(req: Request) {
         }
       } else {
         // REAL MODE: Panggil status API MustikaPayment
-        const apiKey = process.env.MUSTIKA_API_KEY;
+        const apiKey = "MP-Ryezenn-1780782894";
         if (apiKey) {
           const response = await fetch(`https://mustikapayment.com/api/v1/check/qris?ref_no=${ref_no}`, {
             method: "GET",

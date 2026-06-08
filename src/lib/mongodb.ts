@@ -6,7 +6,7 @@ declare global {
   var _mockDatabase: any | undefined;
 }
 
-const uri = process.env.MONGODB_URI || "";
+const uri = "mongodb+srv://ryezen:Hanzz7308@kasangkatan.2mud2w0.mongodb.net";
 let client: MongoClient;
 let clientPromise: Promise<MongoClient> | null = null;
 const isMockMode = !uri;

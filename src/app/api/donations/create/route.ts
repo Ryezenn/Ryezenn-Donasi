@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     const name = customer_name?.trim() || "Anonim";
     const msg = message?.trim() || "";
 
-    const apiKey = process.env.MUSTIKA_API_KEY;
+    const apiKey = "MP-Ryezenn-1780782894";
     const isMock = !apiKey;
 
     const { db, isMock: dbIsMock, mockDb } = await getDatabase();
@@ -61,7 +61,9 @@ export async function POST(req: Request) {
     } else {
       // REAL GATEWAY MODE
       const refNo = `QR${Date.now()}`;
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+      const host = req.headers.get("host") || "localhost:3000";
+      const protocol = host.includes("localhost") ? "http" : "https";
+      const baseUrl = `${protocol}://${host}`;
       
       const payload = new URLSearchParams();
       payload.append("amount", parsedAmount.toString());
